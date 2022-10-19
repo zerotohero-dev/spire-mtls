@@ -1,0 +1,60 @@
+#  \
+#  \\,
+#   \\\,^,.,,.                     Zero to Hero
+#   ,;7~((\))`;;,,               <zerotohero.dev>
+#   ,(@') ;)`))\;;',    stay up to date, be curious: learn
+#    )  . ),((  ))\;,
+#   /;`,,/7),)) )) )\,,
+#  (& )`   (,((,((;( ))\,
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: greeter-server
+  namespace: default
+  labels:
+    app: greeter-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: greeter-server
+  template:
+    metadata:
+      namespace: default
+      labels:
+        app: greeter-server
+    spec:
+      containers:
+      - name: greeter-server
+        image: localhost:32000/greeter-server:demo
+        imagePullPolicy: Always
+        args: ["--addr", ":8123"]
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /spire-agent-socket
+          readOnly: true
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: unix:///spire-agent-socket/agent.sock
+      volumes:
+      - name: spire-agent-socket
+        hostPath:
+          path: /run/spire/sockets
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: greeter-server
+  namespace: default
+spec:
+  selector:
+    app: greeter-server  
+  type: LoadBalancer
+  ports:
+  - name: api
+    port: 8123
+    targetPort: 8123
+    protocol: TCP
+
